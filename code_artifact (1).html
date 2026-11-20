@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#09090b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="مُنجِز" />
+  <title>مُنجِز | جدولك الدراسي الذكي</title>
+
+  <!-- Google Fonts: Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Cairo', 'sans-serif'],
+          },
+          colors: {
+            obsidian: '#09090b',
+            surface: '#121216',
+            card: '#18181f',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: #09090b;
+      color: #f4f4f5;
+      font-family: 'Cairo', sans-serif;
+      overflow-x: hidden;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #09090b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3f3f46;
+    }
+    .glass {
+      background: rgba(24, 24, 31, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-strong {
+      background: rgba(18, 18, 22, 0.92);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.35); }
+      50% { box-shadow: 0 0 20px 2px rgba(139, 92, 246, 0.25); }
+    }
+    .active-slot {
+      animation: pulseGlow 3s infinite;
+      border-color: rgba(139, 92, 246, 0.65) !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-violet-600 selection:text-white">
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-40 glass-strong px-4 py-3">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-violet-900/40 font-black text-xl text-white">
+          م
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            مُنجِز
+            <span id="storageBadge" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              محفوظ على جهازك
+            </span>
+          </h1>
+          <p id="headerSubtitle" class="text-xs text-zinc-400">جدولك الدراسي الأسبوعي الذكي</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- PWA Install Button (Hidden until supported) -->
+        <button id="installPwaBtn" class="hidden items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>تثبيت التطبيق</span>
+        </button>
+
+        <!-- Sound / Notification Button -->
+        <button id="notifToggleBtn" onclick="requestNotificationPermission()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-200 border border-zinc-700/70 text-xs font-bold transition" title="تفعيل التنبيهات الصوتية وإشعارات المتصفح">
+          <span id="notifIcon">🔔</span>
+          <span class="hidden sm:inline" id="notifText">تفعيل التنبيهات</span>
+        </button>
+
+        <!-- Edit Schedule Button (Shown in Schedule View) -->
+        <button id="editSubjectsBtn" onclick="openSetupView()" class="hidden items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-xs font-bold transition">
+          <span>⚙️</span>
+          <span>تعديل المواد</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Motivational Quote Banner -->
+  <div class="max-w-5xl w-full mx-auto px-4 pt-4">
+    <div class="glass rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-3 border-r-4 border-r-amber-400">
+      <div class="flex items-start sm:items-center gap-3">
+        <span class="text-2xl shrink-0">✨</span>
+        <div>
+          <p id="quoteText" class="text-sm sm:text-base font-bold text-zinc-100 leading-relaxed">
+            "الاستمرارية تهزم الموهبة عندما تتكاسل الموهبة.. محاضرة واحدة الآن تقرّبك من هدفك."
+          </p>
+          <span id="quoteSub" class="text-[11px] text-amber-400/90 font-semibold">دفعة تحفيز يومية</span>
+        </div>
+      </div>
+      <button onclick="nextQuote()" class="shrink-0 p-2 rounded-xl bg-zinc-800/70 hover:bg-zinc-700 text-zinc-300 text-xs transition" title="عبارة أخرى">
+        🔄
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 1: SUBJECT SETUP & CUSTOMIZATION -->
+  <main id="setupView" class="max-w-5xl w-full mx-auto px-4 py-6 flex-1 hidden">
+    <div class="glass rounded-3xl p-5 sm:p-8 shadow-2xl">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
+        <div>
+          <span class="inline-block text-xs font-bold px-3 py-1 rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/30 mb-2">
+            الخطوة ١: خصّص جدولك
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-black text-white">اختر موادك وعدد المحاضرات المتراكمة</h2>
+          <p class="text-sm text-zinc-400 mt-1">
+            سيتم توزيع محاضراتك بذكاء على ٧ أيام تبدأ من لحظة الإنشاء، مع مراعاة الصلوات الخمس والوجبات والبريكات والنوم.
+          </p>
+        </div>
+        <button onclick="loadPreset20()" class="shrink-0 px-4 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-extrabold transition flex items-center gap-2 self-start sm:self-center">
+          <span>⚡</span>
+          <span>تعبئة سريعة (٢٠ محاضرة: عربي، برمجة، إنجليزي، تاريخ)</span>
+        </button>
+      </div>
+
+      <!-- Subjects Grid -->
+      <div class="mt-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-extrabold text-zinc-200">المواد الدراسية المتاحة</h3>
+          <span class="text-xs text-zinc-400">حدّد عدد المحاضرات لكل مادة تريدها</span>
+        </div>
+
+        <div id="subjectsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Add Custom Subject -->
+      <div class="mt-6 p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800">
+        <label class="block text-xs font-bold text-zinc-400 mb-2">إضافة مادة أخرى غير موجودة بالقائمة:</label>
+        <div class="flex flex-col sm:flex-row gap-2.5">
+          <input id="customSubjectName" type="text" placeholder="اسم المادة (مثلاً: أحياء، جيولوجيا، إحصاء...)" class="flex-1 bg-zinc-950 border border-zinc-800 focus:border-violet-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none" />
+          <div class="flex items-center gap-2">
+            <input id="customSubjectCount" type="number" min="1" max="30" value="3" class="w-24 bg-zinc-950 border border-zinc-800 focus:border-violet-500 rounded-xl px-3 py-2.5 text-sm text-center text-white outline-none" />
+            <button onclick="addCustomSubject()" class="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-sm transition shrink-0">
+              + إضافة
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Start Date & Summary Footer -->
+      <div class="mt-8 pt-6 border-t border-zinc-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-4">
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-2xl px-4 py-3">
+            <span class="block text-[11px] text-zinc-400">إجمالي المحاضرات المختارة</span>
+            <span id="totalSelectedLectures" class="text-2xl font-black text-violet-400">0</span>
+            <span class="text-xs text-zinc-400 mr-1">محاضرة / ٧ أيام</span>
+          </div>
+
+          <div class="bg-zinc-900/90 border border-zinc-800 rounded-2xl px-4 py-3">
+            <span class="block text-[11px] text-zinc-400 mb-1">بداية الجدول</span>
+            <select id="startDayOption" class="bg-transparent text-sm font-bold text-emerald-400 outline-none cursor-pointer">
+              <option value="today" class="bg-zinc-900 text-white">يبدأ من اليوم (لحظة الإنشاء)</option>
+              <option value="tomorrow" class="bg-zinc-900 text-white">يبدأ من الغد صباحاً</option>
+            </select>
+          </div>
+        </div>
+
+        <button onclick="generateAndSaveSchedule()" class="px-7 py-4 rounded-2xl bg-gradient-to-l from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-base shadow-xl shadow-violet-900/40 transition transform active:scale-[0.99] flex items-center justify-center gap-2">
+          <span>🚀</span>
+          <span>إنشاء وحفظ جدولي المخصص الآن</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 2: ACTIVE WEEKLY SCHEDULE -->
+  <main id="scheduleView" class="max-w-5xl w-full mx-auto px-4 py-5 flex-1 hidden">
+
+    <!-- Top Dashboard Cards: Progress + Live Countdown -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-5">
+      <!-- Progress Card -->
+      <div class="md:col-span-7 glass rounded-2xl p-5 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <span class="text-xs font-bold text-zinc-400">نسبة إنجاز الأسبوع</span>
+            <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5">
+              أنهيت <span id="completedCount" class="text-emerald-400">0</span> من <span id="totalCount">0</span> محاضرة
+            </h2>
+          </div>
+          <div id="progressPercentBadge" class="text-2xl font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3.5 py-1.5 rounded-2xl">
+            0%
+          </div>
+        </div>
+
+        <div class="w-full h-3 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+          <div id="progressBar" class="h-full bg-gradient-to-l from-emerald-400 to-violet-500 transition-all duration-500 rounded-full" style="width: 0%"></div>
+        </div>
+
+        <div id="subjectBadgesSummary" class="flex flex-wrap gap-2 mt-3.5">
+          <!-- Subject breakdown chips -->
+        </div>
+      </div>
+
+      <!-- Next Event Countdown Card -->
+      <div class="md:col-span-5 glass rounded-2xl p-5 flex flex-col justify-between border border-violet-500/25 bg-gradient-to-br from-violet-950/30 to-zinc-900/80">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-violet-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-violet-400 animate-ping"></span>
+            المحطة القادمة في جدولك
+          </span>
+          <button onclick="testNotificationSound()" class="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 transition">
+            🔊 تجربة التنبيه
+          </button>
+        </div>
+
+        <div class="my-2">
+          <h3 id="nextEventTitle" class="text-lg font-black text-white truncate">جاري الحساب...</h3>
+          <p id="nextEventTime" class="text-xs text-zinc-400 mt-0.5">--:--</p>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-zinc-800/80">
+          <span class="text-xs text-zinc-400">الوقت المتبقي:</span>
+          <span id="countdownTimer" class="text-xl font-black font-mono text-amber-400 tracking-wider" dir="ltr">00:00:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day Selector Tabs -->
+    <div class="mb-4">
+      <div id="dayTabs" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+        <!-- 7 Day Buttons -->
+      </div>
+    </div>
+
+    <!-- Selected Day Header -->
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-4 px-1">
+      <div>
+        <h3 id="selectedDayHeading" class="text-xl font-black text-white">اليوم الأول</h3>
+        <p id="selectedDayDate" class="text-xs text-zinc-400"></p>
+      </div>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 font-bold" id="dayLecturesStats">
+          0 محاضرات اليوم
+        </span>
+      </div>
+    </div>
+
+    <!-- Timeline List for Selected Day -->
+    <div id="timelineContainer" class="space-y-3 pb-10">
+      <!-- Time slots rendered here -->
+    </div>
+
+  </main>
+
+  <!-- Toast Notification Banner -->
+  <div id="toastBox" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden max-w-md w-[92%]">
+    <div class="glass-strong border border-violet-500/40 rounded-2xl p-4 shadow-2xl flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span id="toastIcon" class="text-2xl">🔔</span>
+        <div>
+          <h4 id="toastTitle" class="text-sm font-black text-white">تنبيه الجدول</h4>
+          <p id="toastMessage" class="text-xs text-zinc-300 mt-0.5"></p>
+        </div>
+      </div>
+      <button onclick="hideToast()" class="text-zinc-400 hover:text-white text-sm font-bold px-2">✕</button>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. PWA MANIFEST & PERSISTENT STORAGE SETUP
+    // ==========================================
+    (function initPWA() {
+      const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#09090b"/><rect x="36" y="36" width="440" height="440" rx="90" fill="#7c3aed"/><text x="256" y="330" font-family="Arial, sans-serif" font-weight="900" font-size="260" fill="#ffffff" text-anchor="middle">م</text></svg>`;
+      const iconUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgIcon)));
+
+      const manifest = {
+        name: "مُنجِز - جدول المذاكرة الذكي",
+        short_name: "مُنجِز",
+        description: "جدولك الدراسي الأسبوعي المخصص مع تنبيهات المحاضرات ومواعيد الصلاة",
+        start_url: "./",
+        display: "standalone",
+        background_color: "#09090b",
+        theme_color: "#09090b",
+        dir: "rtl",
+        lang: "ar",
+        icons: [
+          { src: iconUrl, sizes: "192x192", type: "image/svg+xml" },
+          { src: iconUrl, sizes: "512x512", type: "image/svg+xml" }
+        ]
+      };
+
+      const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+      const manifestURL = URL.createObjectURL(manifestBlob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = manifestURL;
+      document.head.appendChild(link);
+    })();
+
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('installPwaBtn');
+      if (btn) {
+        btn.classList.remove('hidden');
+        btn.classList.add('flex');
+      }
+    });
+
+    document.getElementById('installPwaBtn')?.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('installPwaBtn').classList.add('hidden');
+      }
+      deferredPrompt = null;
+    });
+
+    // Request Persistent Storage from Browser
+    async function requestPersistentStorage() {
+      if (navigator.storage && navigator.storage.persist) {
+        try {
+          const isPersisted = await navigator.storage.persist();
+          const badge = document.getElementById('storageBadge');
+          if (badge && isPersisted) {
+            badge.textContent = 'حفظ دائم مُفعّل 🛡️';
+          }
+        } catch (e) {
+          console.warn('Storage persist request skipped:', e);
+        }
+      }
+    }
+
+    // Dual-Layer Storage (localStorage + IndexedDB)
+    const STORAGE_KEY = 'monjez_schedule_v3';
+    const DB_NAME = 'MonjezDB';
+    const STORE_NAME = 'schedules';
+
+    function openIDB() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) return reject('No IDB');
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => {
+          req.result.createObjectStore(STORE_NAME);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function saveData(data) {
+      const jsonStr = JSON.stringify(data);
+      try {
+        localStorage.setItem(STORAGE_KEY, jsonStr);
+      } catch (e) {
+        console.warn('localStorage write failed:', e);
+      }
+      try {
+        const db = await openIDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(jsonStr, STORAGE_KEY);
+      } catch (e) {
+        console.warn('IndexedDB write failed:', e);
+      }
+    }
+
+    async function loadData() {
+      let raw = null;
+      try {
+        raw = localStorage.getItem(STORAGE_KEY);
+      } catch (e) {}
+
+      if (!raw) {
+        try {
+          const db = await openIDB();
+          raw = await new Promise((resolve) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const req = tx.objectStore(STORE_NAME).get(STORAGE_KEY);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+          });
+          if (raw) {
+            try { localStorage.setItem(STORAGE_KEY, raw); } catch (e) {}
+          }
+        } catch (e) {}
+      }
+
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.days) && parsed.days.length === 7 && parsed.createdAt) {
+          return parsed;
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    // ==========================================
+    // 2. DATA & CATALOGS
+    // ==========================================
+    const DEFAULT_SUBJECTS = [
+      { id: 'arabic', name: 'اللغة العربية', icon: '📖', color: 'emerald', count: 0, category: 'أساسية' },
+      { id: 'english', name: 'اللغة الإنجليزية', icon: '🌍', color: 'sky', count: 0, category: 'أساسية' },
+      { id: 'history', name: 'التاريخ', icon: '🏛️', color: 'amber', count: 0, category: 'أساسية' },
+      { id: 'programming', name: 'البرمجة', icon: '💻', color: 'violet', count: 0, category: 'تخصصية' },
+      { id: 'chemistry', name: 'الكيمياء', icon: '🧪', color: 'teal', count: 0, category: 'تخصصية' },
+      { id: 'physics', name: 'الفيزياء', icon: '⚡', color: 'indigo', count: 0, category: 'تخصصية' },
+      { id: 'philosophy', name: 'الفلسفة والمنطق', icon: '🧠', color: 'rose', count: 0, category: 'تخصصية' },
+      { id: 'psychology', name: 'علم النفس والاجتماع', icon: '🎭', color: 'fuchsia', count: 0, category: 'تخصصية' },
+      { id: 'math', name: 'الرياضيات', icon: '📐', color: 'blue', count: 0, category: 'تخصصية' },
+      { id: 'second_lang', name: 'اللغة الأجنبية الثانية', icon: '🗣️', color: 'orange', count: 0, category: 'تخصصية' }
+    ];
+
+    const COLOR_STYLES = {
+      emerald: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/40', text: 'text-emerald-300', badge: 'bg-emerald-500/20 text-emerald-300' },
+      sky:     { bg: 'bg-sky-500/15',     border: 'border-sky-500/40',     text: 'text-sky-300',     badge: 'bg-sky-500/20 text-sky-300' },
+      amber:   { bg: 'bg-amber-500/15',   border: 'border-amber-500/40',   text: 'text-amber-300',   badge: 'bg-amber-500/20 text-amber-300' },
+      violet:  { bg: 'bg-violet-500/15',  border: 'border-violet-500/40',  text: 'text-violet-300',  badge: 'bg-violet-500/20 text-violet-300' },
+      teal:    { bg: 'bg-teal-500/15',    border: 'border-teal-500/40',    text: 'text-teal-300',    badge: 'bg-teal-500/20 text-teal-300' },
+      indigo:  { bg: 'bg-indigo-500/15',  border: 'border-indigo-500/40',  text: 'text-indigo-300',  badge: 'bg-indigo-500/20 text-indigo-300' },
+      rose:    { bg: 'bg-rose-500/15',    border: 'border-rose-500/40',    text: 'text-rose-300',    badge: 'bg-rose-500/20 text-rose-300' },
+      fuchsia: { bg: 'bg-fuchsia-500/15', border: 'border-fuchsia-500/40', text: 'text-fuchsia-300', badge: 'bg-fuchsia-500/20 text-fuchsia-300' },
+      blue:    { bg: 'bg-blue-500/15',    border: 'border-blue-500/40',    text: 'text-blue-300',    badge: 'bg-blue-500/20 text-blue-300' },
+      orange:  { bg: 'bg-orange-500/15',  border: 'border-orange-500/40',  text: 'text-orange-300',  badge: 'bg-orange-500/20 text-orange-300' }
+    };
+
+    const QUOTES = [
+      { text: '"الاستمرارية تهزم الموهبة عندما تتكاسل الموهبة.. محاضرة واحدة الآن تقرّبك من هدفك."', sub: 'دفعة تحفيز يومية' },
+      { text: '"لا تؤجل عمل اليوم إلى الغد؛ تراكم الأمس ينتهي بانضباطك في هذه الساعة."', sub: 'قوة الانضباط' },
+      { text: '"أنت لست بحاجة إلى ٧ أيام مثالية، بل إلى التزامك بالمحاضرة التي أمامك الآن فقط."', sub: 'ركّز على الخطوة الحالية' },
+      { text: '"كل صفحة تذاكرها وكل محاضرة تُنهيها هي استثمار مباشر في مستقبلك وراحتك النفسية."', sub: 'اصنع مستقبلك' },
+      { text: '"تذكّر أن التعب يزول سريعاً، أما فرحة الإنجاز وتصفير المتراكم فتبقى طويلاً."', sub: 'نحو القمة' }
+    ];
+
+    const ARABIC_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const ARABIC_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+    let subjectList = JSON.parse(JSON.stringify(DEFAULT_SUBJECTS));
+    let activeSchedule = null;
+    let selectedDayIndex = 0;
+    let currentQuoteIdx = 0;
+    let notifiedSlotKeys = new Set();
+
+    // ==========================================
+    // 3. SETUP VIEW LOGIC
+    // ==========================================
+    function renderSubjectsGrid() {
+      const grid = document.getElementById('subjectsGrid');
+      grid.innerHTML = '';
+      let total = 0;
+
+      subjectList.forEach((subj, idx) => {
+        total += subj.count;
+        const style = COLOR_STYLES[subj.color] || COLOR_STYLES.violet;
+        const isSelected = subj.count > 0;
+
+        const card = document.createElement('div');
+        card.className = `rounded-2xl p-4 border transition-all ${
+          isSelected
+            ? `${style.bg} ${style.border} shadow-lg`
+            : 'bg-zinc-900/60 border-zinc-800/90 hover:border-zinc-700'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl w-10 h-10 rounded-xl bg-zinc-950/70 flex items-center justify-center border border-white/5">
+                ${subj.icon}
+              </span>
+              <div>
+                <h4 class="font-extrabold text-sm sm:text-base text-white">${subj.name}</h4>
+                <span class="text-[11px] text-zinc-400">${subj.category}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 bg-zinc-950/90 p-1 rounded-xl border border-zinc-800">
+              <button onclick="updateSubjectCount(${idx}, -1)" class="w-8 h-8 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-black text-base flex items-center justify-center transition">-</button>
+              <span class="w-8 text-center font-black text-sm ${isSelected ? style.text : 'text-zinc-400'}">${subj.count}</span>
+              <button onclick="updateSubjectCount(${idx}, 1)" class="w-8 h-8 rounded-lg bg-violet-600/30 hover:bg-violet-600/50 text-white font-black text-base flex items-center justify-center transition">+</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      document.getElementById('totalSelectedLectures').textContent = total;
+    }
+
+    function updateSubjectCount(index, delta) {
+      subjectList[index].count = Math.max(0, Math.min(40, subjectList[index].count + delta));
+      renderSubjectsGrid();
+    }
+
+    function loadPreset20() {
+      subjectList.forEach(s => {
+        if (s.id === 'arabic') s.count = 5;
+        else if (s.id === 'programming') s.count = 3;
+        else if (s.id === 'english') s.count = 5;
+        else if (s.id === 'history') s.count = 7;
+        else s.count = 0;
+      });
+      renderSubjectsGrid();
+      showToast('⚡', 'تمت التعبئة السريعة', '٥ عربي + ٣ برمجة + ٥ إنجليزي + ٧ تاريخ (٢٠ محاضرة)');
+    }
+
+    function addCustomSubject() {
+      const nameInput = document.getElementById('customSubjectName');
+      const countInput = document.getElementById('customSubjectCount');
+      const name = nameInput.value.trim();
+      const count = Math.max(1, Math.min(40, parseInt(countInput.value, 10) || 1));
+
+      if (!name) {
+        showToast('⚠️', 'أدخل اسم المادة', 'يرجى كتابة اسم المادة قبل الإضافة.');
+        return;
+      }
+
+      const colors = Object.keys(COLOR_STYLES);
+      const randomColor = colors[subjectList.length % colors.length];
+
+      subjectList.push({
+        id: 'custom_' + Date.now(),
+        name,
+        icon: '📚',
+        color: randomColor,
+        count,
+        category: 'مادة مخصصة'
+      });
+
+      nameInput.value = '';
+      countInput.value = '3';
+      renderSubjectsGrid();
+      showToast('✅', 'تمت إضافة المادة', `${name} (${count} محاضرات)`);
+    }
+
+    // ==========================================
+    // 4. SMART SCHEDULE GENERATOR
+    // ==========================================
+    function generateAndSaveSchedule() {
+      const chosen = subjectList.filter(s => s.count > 0);
+      const totalLectures = chosen.reduce((acc, s) => acc + s.count, 0);
+
+      if (totalLectures === 0) {
+        showToast('⚠️', 'لم تختر أي محاضرات', 'حدّد عدد المحاضرات في مادة واحدة على الأقل.');
+        return;
+      }
+
+      const startOption = document.getElementById('startDayOption').value;
+      const now = new Date();
+      const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (startOption === 'tomorrow') {
+        baseDate.setDate(baseDate.getDate() + 1);
+      }
+
+      // Build balanced pool of lectures (interleaving subjects so consecutive lectures vary)
+      const tempCounts = chosen.map(s => ({ ...s, remaining: s.count, currentNum: 1 }));
+      const lectureQueue = [];
+      while (lectureQueue.length < totalLectures) {
+        tempCounts.sort((a, b) => b.remaining - a.remaining);
+        for (let i = 0; i < tempCounts.length; i++) {
+          if (tempCounts[i].remaining > 0) {
+            lectureQueue.push({
+              subjectId: tempCounts[i].id,
+              subjectName: tempCounts[i].name,
+              icon: tempCounts[i].icon,
+              color: tempCounts[i].color,
+              lectureNumber: tempCounts[i].currentNum,
+              totalForSubject: tempCounts[i].count
+            });
+            tempCounts[i].remaining--;
+            tempCounts[i].currentNum++;
+            break;
+          }
+        }
+      }
+
+      // Distribute across 7 days evenly
+      const daysDistribution = Array.from({ length: 7 }, () => []);
+      lectureQueue.forEach((lec, index) => {
+        daysDistribution[index % 7].push(lec);
+      });
+
+      // Study windows per day
+      const studyWindows = [
+        { start: '09:00', end: '10:30' },
+        { start: '11:00', end: '12:20' },
+        { start: '13:30', end: '15:00' },
+        { start: '16:15', end: '17:45' },
+        { start: '20:00', end: '21:30' },
+        { start: '21:45', end: '23:00' }
+      ];
+
+      const days = [];
+      for (let d = 0; d < 7; d++) {
+        const dayDate = new Date(baseDate);
+        dayDate.setDate(baseDate.getDate() + d);
+
+        const dayOfWeek = dayDate.getDay(); // 5 = Friday
+        const isFriday = dayOfWeek === 5;
+        const dayName = ARABIC_DAYS[dayOfWeek];
+        const formattedDate = `${dayDate.getDate()} ${ARABIC_MONTHS[dayDate.getMonth()]} ${dayDate.getFullYear()}`;
+        const isoDate = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+
+        const dayLectures = daysDistribution[d];
+        const slots = [];
+
+        // Morning Routine
+        slots.push({ id: `d${d}_fajr`, type: 'prayer', title: 'صلاة الفجر وأذكار الصباح', start: '05:00', end: '05:30', icon: '🕌' });
+        slots.push({ id: `d${d}_sleep_am`, type: 'sleep', title: 'نوم الصباح واستكمال الراحة', start: '05:30', end: '08:15', icon: '😴' });
+        slots.push({ id: `d${d}_breakfast`, type: 'meal', title: 'الإفطار وتجهيز المكتب والقهوة', start: '08:15', end: '09:00', icon: '☕' });
+
+        // Slot 1 (09:00 - 10:30)
+        if (dayLectures[0]) {
+          slots.push(createLectureSlot(d, 0, dayLectures[0], studyWindows[0]));
+        } else {
+          slots.push({ id: `d${d}_rev1`, type: 'break', title: 'مراجعة حرة أو قراءة هادئة', start: '09:00', end: '10:30', icon: '🌿' });
+        }
+
+        // Break (10:30 - 11:00)
+        slots.push({ id: `d${d}_brk1`, type: 'break', title: 'بريك راحة وتمدد بعيداً عن الشاشات', start: '10:30', end: '11:00', icon: '🧘' });
+
+        // Slot 2 (11:00 - 12:20)
+        if (dayLectures[1]) {
+          slots.push(createLectureSlot(d, 1, dayLectures[1], studyWindows[1]));
+        }
+
+        // Dhuhr / Jumu'ah + Lunch (12:20 - 13:30)
+        slots.push({
+          id: `d${d}_dhuhr`,
+          type: 'prayer',
+          title: isFriday ? 'صلاة الجمعة وقراءة سورة الكهف' : 'صلاة الظهر',
+          start: '12:20',
+          end: '12:50',
+          icon: '🕌'
+        });
+        slots.push({ id: `d${d}_lunch`, type: 'meal', title: 'وجبة الغداء وقيلولة قصيرة', start: '12:50', end: '13:30', icon: '🍽️' });
+
+        // Slot 3 (13:30 - 15:00)
+        if (dayLectures[2]) {
+          slots.push(createLectureSlot(d, 2, dayLectures[2], studyWindows[2]));
+        }
+
+        // Asr + Break (15:00 - 16:15)
+        slots.push({ id: `d${d}_asr`, type: 'prayer', title: 'صلاة العصر + بريك شاي واسترخاء', start: '15:00', end: '16:15', icon: '🕌' });
+
+        // Slot 4 (16:15 - 17:45)
+        if (dayLectures[3]) {
+          slots.push(createLectureSlot(d, 3, dayLectures[3], studyWindows[3]));
+        }
+
+        // Maghrib + Dinner + Isha (17:45 - 20:00)
+        slots.push({ id: `d${d}_maghrib`, type: 'prayer', title: 'صلاة المغرب + وقت عائلي / رياضة خفيفة', start: '17:45', end: '19:00', icon: '🌅' });
+        slots.push({ id: `d${d}_isha`, type: 'prayer', title: 'صلاة العشاء + وجبة العشاء', start: '19:00', end: '20:00', icon: '🕌' });
+
+        // Slot 5 (20:00 - 21:30)
+        if (dayLectures[4]) {
+          slots.push(createLectureSlot(d, 4, dayLectures[4], studyWindows[4]));
+        }
+
+        // Slot 6 (21:45 - 23:00) if heavy load
+        if (dayLectures[5]) {
+          slots.push({ id: `d${d}_brk_night`, type: 'break', title: 'استراحة قصيرة', start: '21:30', end: '21:45', icon: '☕' });
+          slots.push(createLectureSlot(d, 5, dayLectures[5], studyWindows[5]));
+        }
+
+        // Extra overflow if user entered > 42 lectures
+        for (let extra = 6; extra < dayLectures.length; extra++) {
+          slots.push(createLectureSlot(d, extra, dayLectures[extra], { start: '23:00', end: '23:45' }));
+        }
+
+        // Night Sleep
+        slots.push({
+          id: `d${d}_sleep_pm`,
+          type: 'sleep',
+          title: 'النوم العميق لشحن طاقة الغد',
+          start: dayLectures[5] ? '23:15' : '22:00',
+          end: '23:59',
+          icon: '🌙'
+        });
+
+        days.push({
+          dayIndex: d,
+          dayLabel: `اليوم ${d + 1}`,
+          dayName,
+          formattedDate,
+          isoDate,
+          slots
+        });
+      }
+
+      activeSchedule = {
+        createdAt: new Date().toISOString(),
+        startOption,
+        subjectsSummary: chosen.map(s => ({ id: s.id, name: s.name, icon: s.icon, color: s.color, count: s.count })),
+        days
+      };
+
+      saveData(activeSchedule);
+      selectedDayIndex = 0;
+      openScheduleView();
+      showToast('🎉', 'تم إنشاء جدولك وحفظه!', 'الجدول محفوظ على جهازك وسيعمل تلقائياً في كل زيارة.');
+    }
+
+    function createLectureSlot(dayIdx, slotIdx, lec, win) {
+      return {
+        id: `lec_d${dayIdx}_s${slotIdx}_${lec.subjectId}_${lec.lectureNumber}`,
+        type: 'lecture',
+        subjectId: lec.subjectId,
+        subjectName: lec.subjectName,
+        icon: lec.icon,
+        color: lec.color,
+        lectureNumber: lec.lectureNumber,
+        totalForSubject: lec.totalForSubject,
+        title: `${lec.subjectName} — محاضرة (${lec.lectureNumber} من ${lec.totalForSubject})`,
+        start: win.start,
+        end: win.end,
+        completed: false
+      };
+    }
+
+    // ==========================================
+    // 5. SCHEDULE VIEW RENDERING & INTERACTION
+    // ==========================================
+    function openSetupView() {
+      document.getElementById('scheduleView').classList.add('hidden');
+      document.getElementById('setupView').classList.remove('hidden');
+      document.getElementById('editSubjectsBtn').classList.add('hidden');
+      renderSubjectsGrid();
+    }
+
+    function openScheduleView() {
+      if (!activeSchedule) return openSetupView();
+
+      document.getElementById('setupView').classList.add('hidden');
+      document.getElementById('scheduleView').classList.remove('hidden');
+      document.getElementById('editSubjectsBtn').classList.remove('hidden');
+      document.getElementById('editSubjectsBtn').classList.add('flex');
+
+      const todayIso = getTodayIso();
+      const foundIdx = activeSchedule.days.findIndex(d => d.isoDate === todayIso);
+      if (foundIdx !== -1) {
+        selectedDayIndex = foundIdx;
+      }
+
+      const firstDay = activeSchedule.days[0];
+      const lastDay = activeSchedule.days[6];
+      document.getElementById('headerSubtitle').textContent = `من ${firstDay.formattedDate} إلى ${lastDay.formattedDate}`;
+
+      renderDashboardStats();
+      renderDayTabs();
+      renderSelectedDayTimeline();
+      updateLiveCountdown();
+    }
+
+    function getTodayIso() {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+    }
+
+    function renderDashboardStats() {
+      let totalLectures = 0;
+      let completedLectures = 0;
+      const perSubject = {};
+
+      activeSchedule.subjectsSummary.forEach(s => {
+        perSubject[s.id] = { ...s, done: 0 };
+      });
+
+      activeSchedule.days.forEach(day => {
+        day.slots.forEach(slot => {
+          if (slot.type === 'lecture') {
+            totalLectures++;
+            if (slot.completed) {
+              completedLectures++;
+              if (perSubject[slot.subjectId]) perSubject[slot.subjectId].done++;
+            }
+          }
+        });
+      });
+
+      const pct = totalLectures > 0 ? Math.round((completedLectures / totalLectures) * 100) : 0;
+      document.getElementById('completedCount').textContent = completedLectures;
+      document.getElementById('totalCount').textContent = totalLectures;
+      document.getElementById('progressPercentBadge').textContent = `${pct}%`;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+
+      const badgesContainer = document.getElementById('subjectBadgesSummary');
+      badgesContainer.innerHTML = '';
+      Object.values(perSubject).forEach(s => {
+        const style = COLOR_STYLES[s.color] || COLOR_STYLES.violet;
+        const badge = document.createElement('span');
+        badge.className = `text-xs font-bold px-2.5 py-1 rounded-xl border ${style.bg} ${style.border} ${style.text}`;
+        badge.textContent = `${s.icon} ${s.name}: ${s.done}/${s.count}`;
+        badgesContainer.appendChild(badge);
+      });
+    }
+
+    function renderDayTabs() {
+      const container = document.getElementById('dayTabs');
+      container.innerHTML = '';
+      const todayIso = getTodayIso();
+
+      activeSchedule.days.forEach((day, idx) => {
+        const isSelected = idx === selectedDayIndex;
+        const isToday = day.isoDate === todayIso;
+        const lecs = day.slots.filter(s => s.type === 'lecture');
+        const doneLecs = lecs.filter(s => s.completed).length;
+        const allDone = lecs.length > 0 && doneLecs === lecs.length;
+
+        const btn = document.createElement('button');
+        btn.onclick = () => {
+          selectedDayIndex = idx;
+          renderDayTabs();
+          renderSelectedDayTimeline();
+        };
+
+        btn.className = `shrink-0 px-4 py-3 rounded-2xl border text-right transition-all min-w-[125px] ${
+          isSelected
+            ? 'bg-violet-600 border-violet-400 text-white shadow-lg shadow-violet-900/40'
+            : 'bg-zinc-900/80 border-zinc-800 text-zinc-300 hover:border-zinc-700'
+        }`;
+
+        btn.innerHTML = `
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-black">${day.dayName}</span>
+            ${isToday ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-400/20 text-emerald-300 font-bold">اليوم</span>` : ''}
+            ${allDone ? `<span>✅</span>` : ''}
+          </div>
+          <div class="text-[11px] opacity-80 mt-0.5">${day.formattedDate.split(' ').slice(0, 2).join(' ')}</div>
+          <div class="text-[11px] font-bold mt-1.5 ${isSelected ? 'text-violet-100' : 'text-zinc-400'}">
+            ${doneLecs}/${lecs.length} محاضرات
+          </div>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function renderSelectedDayTimeline() {
+      const day = activeSchedule.days[selectedDayIndex];
+      const todayIso = getTodayIso();
+      const isToday = day.isoDate === todayIso;
+      const isPastDay = day.isoDate < todayIso;
+
+      document.getElementById('selectedDayHeading').textContent = `${day.dayLabel} — ${day.dayName}`;
+      document.getElementById('selectedDayDate').textContent = day.formattedDate;
+
+      const lecs = day.slots.filter(s => s.type === 'lecture');
+      document.getElementById('dayLecturesStats').textContent = `${lecs.length} محاضرات مجدولة`;
+
+      const container = document.getElementById('timelineContainer');
+      container.innerHTML = '';
+
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+      day.slots.forEach(slot => {
+        const startMins = timeToMinutes(slot.start);
+        const endMins = timeToMinutes(slot.end);
+
+        const isCurrent = isToday && nowMinutes >= startMins && nowMinutes < endMins;
+        const isPassed = isPastDay || (isToday && nowMinutes >= endMins);
+
+        const card = document.createElement('div');
+
+        if (slot.type === 'lecture') {
+          const style = COLOR_STYLES[slot.color] || COLOR_STYLES.violet;
+          card.className = `rounded-2xl p-4 border transition-all flex items-center justify-between gap-3 ${
+            slot.completed
+              ? 'bg-zinc-900/40 border-emerald-500/30 opacity-75'
+              : `${style.bg} ${style.border}`
+          } ${isCurrent ? 'active-slot' : ''}`;
+
+          card.innerHTML = `
+            <div class="flex items-center gap-3.5 min-w-0">
+              <button onclick="toggleLectureDone('${slot.id}')" class="w-7 h-7 rounded-xl border-2 flex items-center justify-center shrink-0 transition ${
+                slot.completed
+                  ? 'bg-emerald-500 border-emerald-500 text-zinc-950 font-black'
+                  : 'border-zinc-500 hover:border-white bg-zinc-950/60'
+              }">
+                ${slot.completed ? '✓' : ''}
+              </button>
+
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-zinc-950/80 text-zinc-200 border border-white/10" dir="ltr">
+                    ${formatTime12(slot.start)} - ${formatTime12(slot.end)}
+                  </span>
+                  <span class="text-[11px] font-extrabold px-2 py-0.5 rounded-lg ${style.badge}">
+                    ${slot.icon} ${slot.subjectName}
+                  </span>
+                  ${isCurrent ? '<span class="text-[11px] font-black px-2 py-0.5 rounded-lg bg-violet-600 text-white">جارية الآن 🔥</span>' : ''}
+                  ${!slot.completed && isPassed ? '<span class="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-zinc-800 text-zinc-400">فات وقتها (يمكنك تعويضها)</span>' : ''}
+                </div>
+                <h4 class="text-sm sm:text-base font-extrabold mt-1.5 ${slot.completed ? 'line-through text-zinc-400' : 'text-white'}">
+                  ${slot.title}
+                </h4>
+              </div>
+            </div>
+
+            <button onclick="toggleLectureDone('${slot.id}')" class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+              slot.completed
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : 'bg-zinc-950/70 hover:bg-zinc-900 text-zinc-200 border border-white/10'
+            }">
+              ${slot.completed ? 'منجزة ✅' : 'إتمام'}
+            </button>
+          `;
+        } else {
+          // Prayer, Meal, Break, Sleep
+          const typeStyles = {
+            prayer: 'bg-amber-500/10 border-amber-500/25 text-amber-200',
+            meal:   'bg-zinc-900/70 border-zinc-800 text-zinc-300',
+            break:  'bg-teal-500/10 border-teal-500/20 text-teal-200',
+            sleep:  'bg-indigo-950/30 border-indigo-500/20 text-indigo-200'
+          };
+          const cls = typeStyles[slot.type] || typeStyles.meal;
+
+          card.className = `rounded-xl px-4 py-2.5 border flex items-center justify-between gap-3 ${cls} ${isCurrent ? 'active-slot' : ''} ${isPassed ? 'opacity-60' : ''}`;
+          card.innerHTML = `
+            <div class="flex items-center gap-2.5">
+              <span class="text-lg">${slot.icon}</span>
+              <span class="text-xs sm:text-sm font-bold">${slot.title}</span>
+              ${isCurrent ? '<span class="text-[10px] font-black px-2 py-0.5 rounded bg-violet-600 text-white">الآن</span>' : ''}
+            </div>
+            <span class="text-xs font-mono opacity-80 shrink-0" dir="ltr">
+              ${formatTime12(slot.start)} - ${formatTime12(slot.end)}
+            </span>
+          `;
+        }
+
+        container.appendChild(card);
+      });
+    }
+
+    function toggleLectureDone(slotId) {
+      if (!activeSchedule) return;
+      for (const day of activeSchedule.days) {
+        const slot = day.slots.find(s => s.id === slotId);
+        if (slot) {
+          slot.completed = !slot.completed;
+          if (slot.completed) {
+            playBeep(660, 0.15);
+            showToast('🌟', 'عاش يا بطل!', `تم تسجيل إنجاز: ${slot.title}`);
+          }
+          break;
+        }
+      }
+      saveData(activeSchedule);
+      renderDashboardStats();
+      renderDayTabs();
+      renderSelectedDayTimeline();
+    }
+
+    // ==========================================
+    // 6. COUNTDOWN & NOTIFICATIONS ENGINE
+    // ==========================================
+    function timeToMinutes(hhmm) {
+      const [h, m] = hhmm.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function formatTime12(hhmm) {
+      let [h, m] = hhmm.split(':').map(Number);
+      const period = h >= 12 ? 'م' : 'ص';
+      h = h % 12 || 12;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+    }
+
+    function updateLiveCountdown() {
+      if (!activeSchedule) return;
+      const now = new Date();
+      let nextEvent = null;
+      let nextEventDateObj = null;
+
+      for (const day of activeSchedule.days) {
+        const [y, mo, d] = day.isoDate.split('-').map(Number);
+        for (const slot of day.slots) {
+          const [sh, sm] = slot.start.split(':').map(Number);
+          const slotStart = new Date(y, mo - 1, d, sh, sm, 0);
+
+          // Trigger exact-minute notification
+          const diffSec = Math.floor((slotStart - now) / 1000);
+          if (diffSec <= 0 && diffSec > -59) {
+            const key = `${day.isoDate}_${slot.id}`;
+            if (!notifiedSlotKeys.has(key)) {
+              notifiedSlotKeys.add(key);
+              triggerSlotAlert(slot);
+            }
+          }
+
+          if (slotStart > now && !nextEvent) {
+            nextEvent = slot;
+            nextEventDateObj = slotStart;
+            break;
+          }
+        }
+        if (nextEvent) break;
+      }
+
+      const titleEl = document.getElementById('nextEventTitle');
+      const timeEl = document.getElementById('nextEventTime');
+      const timerEl = document.getElementById('countdownTimer');
+
+      if (!nextEvent || !nextEventDateObj) {
+        titleEl.textContent = 'اكتملت جميع مواعيد الأسبوع! 🎉';
+        timeEl.textContent = 'يمكنك إنشاء جدول جديد في أي وقت';
+        timerEl.textContent = '00:00:00';
+        return;
+      }
+
+      titleEl.textContent = `${nextEvent.icon} ${nextEvent.title}`;
+      timeEl.textContent = `الساعة ${formatTime12(nextEvent.start)}`;
+
+      const totalSeconds = Math.max(0, Math.floor((nextEventDateObj - now) / 1000));
+      const hrs = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const secs = totalSeconds % 60;
+
+      timerEl.textContent = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function triggerSlotAlert(slot) {
+      playBeep(523.25, 0.2);
+      setTimeout(() => playBeep(659.25, 0.25), 220);
+
+      showToast(slot.icon, 'حان الموعد الآن!', `${slot.title} (${formatTime12(slot.start)})`);
+
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('مُنجِز — حان وقت الموعد!', {
+            body: `${slot.icon} ${slot.title} (${formatTime12(slot.start)})`
+          });
+        } catch (e) {}
+      }
+    }
+
+    function requestNotificationPermission() {
+      playBeep(587.33, 0.15);
+      if (!('Notification' in window)) {
+        showToast('🔔', 'التنبيه الصوتي مفعل', 'متصفحك يدعم التنبيه الصوتي داخل الصفحة.');
+        return;
+      }
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          document.getElementById('notifIcon').textContent = '✅';
+          document.getElementById('notifText').textContent = 'التنبيهات مفعّلة';
+          showToast('🔔', 'تم تفعيل الإشعارات بنجاح', 'ستصلك إشعارات وصوت تنبيه عند بدء كل محاضرة وصلاة.');
+        } else {
+          showToast('🔊', 'تم تفعيل الصوت الداخلي', 'يرجى السماح بالإشعارات من إعدادات المتصفح لتلقيها خارج الصفحة.');
+        }
+      });
+    }
+
+    function testNotificationSound() {
+      playBeep(523.25, 0.18);
+      setTimeout(() => playBeep(659.25, 0.18), 180);
+      setTimeout(() => playBeep(783.99, 0.28), 360);
+      showToast('🔊', 'تجربة التنبيه الصوتي', 'هكذا سيتم تنبيهك عند حلول موعد كل محاضرة أو صلاة!');
+    }
+
+    function playBeep(freq = 587.33, duration = 0.2) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    // ==========================================
+    // 7. QUOTES & TOAST HELPERS
+    // ==========================================
+    function nextQuote() {
+      currentQuoteIdx = (currentQuoteIdx + 1) % QUOTES.length;
+      document.getElementById('quoteText').textContent = QUOTES[currentQuoteIdx].text;
+      document.getElementById('quoteSub').textContent = QUOTES[currentQuoteIdx].sub;
+    }
+
+    let toastTimeout;
+    function showToast(icon, title, message) {
+      document.getElementById('toastIcon').textContent = icon;
+      document.getElementById('toastTitle').textContent = title;
+      document.getElementById('toastMessage').textContent = message;
+      const box = document.getElementById('toastBox');
+      box.classList.remove('hidden');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(hideToast, 5000);
+    }
+
+    function hideToast() {
+      document.getElementById('toastBox').classList.add('hidden');
+    }
+
+    // ==========================================
+    // 8. INITIALIZATION ON PAGE LOAD
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', async () => {
+      await requestPersistentStorage();
+
+      if ('Notification' in window && Notification.permission === 'granted') {
+        document.getElementById('notifIcon').textContent = '✅';
+        document.getElementById('notifText').textContent = 'التنبيهات مفعّلة';
+      }
+
+      const saved = await loadData();
+      if (saved) {
+        activeSchedule = saved;
+        saved.subjectsSummary.forEach(savedSub => {
+          const existing = subjectList.find(s => s.id === savedSub.id || s.name === savedSub.name);
+          if (existing) {
+            existing.count = savedSub.count;
+          } else {
+            subjectList.push({
+              id: savedSub.id,
+              name: savedSub.name,
+              icon: savedSub.icon || '📚',
+              color: savedSub.color || 'violet',
+              count: savedSub.count,
+              category: 'مادة مخصصة'
+            });
+          }
+        });
+        openScheduleView();
+      } else {
+        openSetupView();
+      }
+
+      setInterval(updateLiveCountdown, 1000);
+    });
+  </script>
+</body>
+</html>
